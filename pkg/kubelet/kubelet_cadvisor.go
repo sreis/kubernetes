@@ -104,3 +104,7 @@ func (kl *Kubelet) GetCachedRootFsInfo() (cadvisorapiv2.FsInfo, error) {
 	}
 	return *kl.rootfsInfo, nil
 }
+
+func (kl *Kubelet) GetRootCgroup() string {
+	return 	kl.cadvisor.RootCgroup()
+}

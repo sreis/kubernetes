@@ -53,13 +53,11 @@ type rawContainerHandler struct {
 	ignoreMetrics container.MetricSet
 
 	pid int
+
+	isRootCgroup bool
 }
 
-func isRootCgroup(name string) bool {
-	return name == "/"
-}
-
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet, isRootCgroup bool) (container.ContainerHandler, error) {
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
@@ -84,7 +82,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 	}
 
 	pid := 0
-	if isRootCgroup(name) {
+	if isRootCgroup {
 		pid = 1
 	}
 
@@ -99,6 +97,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		rootFs:             rootFs,
 		ignoreMetrics:      ignoreMetrics,
 		pid:                pid,
+		isRootCgroup:       isRootCgroup,
 	}, nil
 }
 
@@ -111,7 +110,7 @@ func (self *rawContainerHandler) ContainerReference() (info.ContainerReference, 
 
 func (self *rawContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
 	nd := []info.NetInfo{}
-	if isRootCgroup(self.name) {
+	if self.isRootCgroup {
 		mi, err := self.machineInfoFactory.GetMachineInfo()
 		if err != nil {
 			return nd, err
@@ -129,13 +128,13 @@ func (self *rawContainerHandler) Cleanup() {}
 
 func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	const hasNetwork = false
-	hasFilesystem := isRootCgroup(self.name) || len(self.externalMounts) > 0
+	hasFilesystem := self.isRootCgroup || len(self.externalMounts) > 0
 	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, hasNetwork, hasFilesystem)
 	if err != nil {
 		return spec, err
 	}
 
-	if isRootCgroup(self.name) {
+	if self.isRootCgroup {
 		// Check physical network devices for root container.
 		nd, err := self.GetRootNetworkDevices()
 		if err != nil {
@@ -199,7 +198,7 @@ func fsToFsStats(fs *fs.Fs) info.FsStats {
 func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	var allFs []fs.Fs
 	// Get Filesystem information only for the root cgroup.
-	if isRootCgroup(self.name) {
+	if self.isRootCgroup {
 		filesystems, err := self.fsInfo.GetGlobalFsInfo()
 		if err != nil {
 			return err

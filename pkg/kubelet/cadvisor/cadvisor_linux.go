@@ -209,7 +209,7 @@ func (cc *cadvisorClient) ImagesFsInfo() (cadvisorapiv2.FsInfo, error) {
 }
 
 func (cc *cadvisorClient) RootFsInfo() (cadvisorapiv2.FsInfo, error) {
-	return cc.GetDirFsInfo(cc.rootPath)
+	return cc.GetDirFsInfo("/")
 }
 
 func (cc *cadvisorClient) getFsInfo(label string) (cadvisorapiv2.FsInfo, error) {
@@ -243,4 +243,8 @@ func (cc *cadvisorClient) HasDedicatedImageFs() (bool, error) {
 		return false, err
 	}
 	return imageFsInfo.Device != rootFsInfo.Device, nil
+}
+
+func (cc *cadvisorClient) RootCgroup() string {
+	return cc.GetRootCgroup()
 }

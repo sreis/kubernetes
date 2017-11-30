@@ -63,9 +63,10 @@ func (sp *summaryProviderImpl) Get() (*stats.Summary, error) {
 		Count:     2, // 2 samples are needed to compute "instantaneous" CPU
 		Recursive: true,
 	}
-	infos, err := sp.provider.GetContainerInfoV2("/", options)
+	rootCgroup := sp.provider.GetRootCgroup()
+	infos, err := sp.provider.GetContainerInfoV2(rootCgroup, options)
 	if err != nil {
-		if _, ok := infos["/"]; ok {
+		if _, ok := infos[rootCgroup]; ok {
 			// If the failure is partial, log it and return a best-effort response.
 			glog.Errorf("Partial failure issuing GetContainerInfoV2: %v", err)
 		} else {
@@ -94,7 +95,7 @@ func (sp *summaryProviderImpl) Get() (*stats.Summary, error) {
 		return nil, fmt.Errorf("failed ImageStats: %v", err)
 	}
 	sb := &summaryBuilder{sp.fsResourceAnalyzer, node, nodeConfig, rootFsInfo, imageFsInfo, *imageStats, infos}
-	return sb.build()
+	return sb.build(sp.provider.GetRootCgroup())
 }
 
 // summaryBuilder aggregates the datastructures provided by cadvisor into a Summary result
@@ -109,8 +110,8 @@ type summaryBuilder struct {
 }
 
 // build returns a Summary from aggregating the input data
-func (sb *summaryBuilder) build() (*stats.Summary, error) {
-	rootInfo, found := sb.infos["/"]
+func (sb *summaryBuilder) build(rootCgroup string) (*stats.Summary, error) {
+	rootInfo, found := sb.infos[rootCgroup]
 	if !found {
 		return nil, fmt.Errorf("Missing stats for root container")
 	}

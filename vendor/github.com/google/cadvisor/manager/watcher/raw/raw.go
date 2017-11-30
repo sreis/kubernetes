@@ -44,7 +44,7 @@ type rawContainerWatcher struct {
 	stopWatcher chan error
 }
 
-func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
+func NewRawContainerWatcher(rootCgroup string) (watcher.ContainerWatcher, error) {
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cgroup subsystems: %v", err)
@@ -59,7 +59,7 @@ func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
 	}
 
 	rawWatcher := &rawContainerWatcher{
-		cgroupPaths:      common.MakeCgroupPaths(cgroupSubsystems.MountPoints, "/"),
+		cgroupPaths:      common.MakeCgroupPaths(cgroupSubsystems.MountPoints, rootCgroup),
 		cgroupSubsystems: &cgroupSubsystems,
 		watcher:          watcher,
 		stopWatcher:      make(chan error),

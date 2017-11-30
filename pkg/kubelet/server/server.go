@@ -196,6 +196,7 @@ type HostInterface interface {
 	GetExec(podFullName string, podUID types.UID, containerName string, cmd []string, streamOpts remotecommandserver.Options) (*url.URL, error)
 	GetAttach(podFullName string, podUID types.UID, containerName string, streamOpts remotecommandserver.Options) (*url.URL, error)
 	GetPortForward(podName, podNamespace string, podUID types.UID, portForwardOpts portforward.V4Options) (*url.URL, error)
+	GetRootCgroup() string
 }
 
 // NewServer initializes and configures a kubelet.Server object to handle HTTP requests.

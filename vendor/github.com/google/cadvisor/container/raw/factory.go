@@ -51,12 +51,12 @@ func (self *rawFactory) String() string {
 	return "raw"
 }
 
-func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *rawFactory) NewContainerHandler(name string, inHostNamespace, isRootCgroup bool) (container.ContainerHandler, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
-	return newRawContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, self.watcher, rootFs, self.ignoreMetrics)
+	return newRawContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, self.watcher, rootFs, self.ignoreMetrics, isRootCgroup)
 }
 
 // The raw factory can handle any container. If --docker_only is set to false, non-docker containers are ignored.

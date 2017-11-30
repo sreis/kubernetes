@@ -49,6 +49,7 @@ type StatsProvider interface {
 	RootFsInfo() (cadvisorapiv2.FsInfo, error)
 	ListVolumesForPod(podUID types.UID) (map[string]volume.Volume, bool)
 	GetPods() []*v1.Pod
+	GetRootCgroup() string
 }
 
 type handler struct {
