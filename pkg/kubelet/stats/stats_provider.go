@@ -40,7 +40,7 @@ func NewCRIStatsProvider(
 	runtimeService internalapi.RuntimeService,
 	imageService internalapi.ImageManagerService,
 ) *StatsProvider {
-	return newStatsProvider(cadvisor, podManager, runtimeCache, newCRIStatsProvider(cadvisor, resourceAnalyzer, runtimeService, imageService))
+	return newStatsProvider(cadvisor, podManager, runtimeCache, newCRIStatsProvider(cadvisor, resourceAnalyzer, runtimeService, imageService), "/")
 }
 
 // NewCadvisorStatsProvider returns a containerStatsProvider that provides both
@@ -51,8 +51,9 @@ func NewCadvisorStatsProvider(
 	podManager kubepod.Manager,
 	runtimeCache kubecontainer.RuntimeCache,
 	imageService kubecontainer.ImageService,
+	rootCgroup string,
 ) *StatsProvider {
-	return newStatsProvider(cadvisor, podManager, runtimeCache, newCadvisorStatsProvider(cadvisor, resourceAnalyzer, imageService))
+	return newStatsProvider(cadvisor, podManager, runtimeCache, newCadvisorStatsProvider(cadvisor, resourceAnalyzer, imageService), rootCgroup)
 }
 
 // newStatsProvider returns a new StatsProvider that provides node stats from
@@ -62,12 +63,14 @@ func newStatsProvider(
 	podManager kubepod.Manager,
 	runtimeCache kubecontainer.RuntimeCache,
 	containerStatsProvider containerStatsProvider,
+	rootCgroup string,
 ) *StatsProvider {
 	return &StatsProvider{
 		cadvisor:               cadvisor,
 		podManager:             podManager,
 		runtimeCache:           runtimeCache,
 		containerStatsProvider: containerStatsProvider,
+		rootCgroup:             rootCgroup,
 	}
 }
 
@@ -76,6 +79,7 @@ type StatsProvider struct {
 	cadvisor     cadvisor.Interface
 	podManager   kubepod.Manager
 	runtimeCache kubecontainer.RuntimeCache
+	rootCgroup   string
 	containerStatsProvider
 }
 
@@ -114,7 +118,7 @@ func (p *StatsProvider) RootFsStats() (*statsapi.FsStats, error) {
 
 	// Get the root container stats's timestamp, which will be used as the
 	// imageFs stats timestamp.
-	rootStats, err := getCgroupStats(p.cadvisor, "/")
+	rootStats, err := getCgroupStats(p.cadvisor, p.rootCgroup)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get root container stats: %v", err)
 	}

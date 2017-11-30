@@ -703,7 +703,8 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 				klet.resourceAnalyzer,
 				klet.podManager,
 				klet.runtimeCache,
-				klet.containerRuntime)
+				klet.containerRuntime,
+				klet.cgroupRoot)
 		} else {
 			klet.StatsProvider = stats.NewCRIStatsProvider(
 				klet.cadvisor,
@@ -750,7 +751,8 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 			klet.resourceAnalyzer,
 			klet.podManager,
 			klet.runtimeCache,
-			klet.containerRuntime)
+			klet.containerRuntime,
+			klet.cgroupRoot)
 	}
 
 	klet.pleg = pleg.NewGenericPLEG(klet.containerRuntime, plegChannelCapacity, plegRelistPeriod, klet.podCache, clock.RealClock{})

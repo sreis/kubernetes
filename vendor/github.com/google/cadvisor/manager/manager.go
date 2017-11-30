@@ -483,10 +483,6 @@ func (self *manager) GetContainerInfo(containerName string, query *info.Containe
 }
 
 func (self *manager) GetContainerInfoV2(containerName string, options v2.RequestOptions) (map[string]v2.ContainerInfo, error) {
-	if containerName == "/" {
-		containerName = self.cadvisorContainer
-	}
-
 	containers, err := self.getRequestedContainers(containerName, options)
 	if err != nil {
 		return nil, err
