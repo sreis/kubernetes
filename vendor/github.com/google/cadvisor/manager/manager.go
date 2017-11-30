@@ -135,6 +135,8 @@ type Manager interface {
 
 	// Returns debugging information. Map of lines per category.
 	DebugInfo() map[string][]string
+
+	GetRootCgroup() string
 }
 
 // New takes a memory storage and returns a new manager.
@@ -301,7 +303,7 @@ func (self *manager) Start() error {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
 
-	rawWatcher, err := rawwatcher.NewRawContainerWatcher()
+	rawWatcher, err := rawwatcher.NewRawContainerWatcher(self.cadvisorContainer)
 	if err != nil {
 		return err
 	}
@@ -322,12 +324,13 @@ func (self *manager) Start() error {
 	self.nvidiaManager.Setup()
 
 	// Create root and then recover all containers.
-	err = self.createContainer("/", watcher.Raw)
+	glog.Infof("Create root and then recover all containers: %s", self.cadvisorContainer)
+	err = self.createContainer(self.cadvisorContainer, watcher.Raw)
 	if err != nil {
 		return err
 	}
-	glog.Infof("Starting recovery of all containers")
-	err = self.detectSubcontainers("/")
+	glog.Infof("Starting recovery of all containers %s", self.cadvisorContainer)
+	err = self.detectSubcontainers(self.cadvisorContainer)
 	if err != nil {
 		return err
 	}
@@ -380,7 +383,7 @@ func (self *manager) globalHousekeeping(quit chan error) {
 			start := time.Now()
 
 			// Check for new containers.
-			err := self.detectSubcontainers("/")
+			err := self.detectSubcontainers(self.cadvisorContainer)
 			if err != nil {
 				glog.Errorf("Failed to detect containers: %s", err)
 			}
@@ -480,6 +483,10 @@ func (self *manager) GetContainerInfo(containerName string, query *info.Containe
 }
 
 func (self *manager) GetContainerInfoV2(containerName string, options v2.RequestOptions) (map[string]v2.ContainerInfo, error) {
+	if containerName == "/" {
+		containerName = self.cadvisorContainer
+	}
+
 	containers, err := self.getRequestedContainers(containerName, options)
 	if err != nil {
 		return nil, err
@@ -748,7 +755,8 @@ func (self *manager) GetFsInfoByFsUUID(uuid string) (v2.FsInfo, error) {
 func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 	var empty time.Time
 	// Get latest data from filesystems hanging off root container.
-	stats, err := self.memoryCache.RecentStats("/", empty, empty, 1)
+	stats, err := self.memoryCache.RecentStats(self.cadvisorContainer, empty, empty, 1)
+	glog.V(1).Infof("cadvisor: GetFsInfo: label=%+v stats=%+v", label, stats)
 	if err != nil {
 		return nil, err
 	}
@@ -925,7 +933,9 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		return nil
 	}
 
-	handler, accept, err := container.NewContainerHandler(containerName, watchSource, m.inHostNamespace)
+	isRootCgroup := containerName == m.cadvisorContainer
+
+	handler, accept, err := container.NewContainerHandler(containerName, watchSource, m.inHostNamespace, isRootCgroup)
 	if err != nil {
 		return err
 	}
@@ -1129,7 +1139,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 	}
 
 	// There is a race between starting the watch and new container creation so we do a detection before we read new containers.
-	err := self.detectSubcontainers("/")
+	err := self.detectSubcontainers(self.cadvisorContainer)
 	if err != nil {
 		return err
 	}
@@ -1341,6 +1351,10 @@ func (self *manager) getFsInfoByDeviceName(deviceName string) (v2.FsInfo, error)
 		}
 	}
 	return v2.FsInfo{}, fmt.Errorf("cannot find filesystem info for device %q", deviceName)
+}
+
+func (m *manager) GetRootCgroup() string {
+	return m.cadvisorContainer
 }
 
 func getVersionInfo() (*info.VersionInfo, error) {

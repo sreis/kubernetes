@@ -78,6 +78,7 @@ type StatsProvider interface {
 	ListVolumesForPod(podUID types.UID) (map[string]volume.Volume, bool)
 	// GetPods returns the specs of all the pods running on this node.
 	GetPods() []*v1.Pod
+	GetRootCgroup() string
 }
 
 type handler struct {

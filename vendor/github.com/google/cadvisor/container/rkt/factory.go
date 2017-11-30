@@ -44,7 +44,7 @@ func (self *rktFactory) String() string {
 	return "rkt"
 }
 
-func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *rktFactory) NewContainerHandler(name string, inHostNamespace, isRootCgroup bool) (container.ContainerHandler, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, err

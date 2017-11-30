@@ -2181,6 +2181,10 @@ func (kl *Kubelet) cleanUpContainersInPod(podID types.UID, exitedContainerID str
 	}
 }
 
+func (kl *Kubelet) GetRootCgroup() string {
+	return kl.cgroupRoot
+}
+
 // isSyncPodWorthy filters out events that are not worthy of pod syncing
 func isSyncPodWorthy(event *pleg.PodLifecycleEvent) bool {
 	// ContatnerRemoved doesn't affect pod state

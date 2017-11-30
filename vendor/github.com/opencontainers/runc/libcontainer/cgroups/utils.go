@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
 )
 
 const (
@@ -256,7 +256,7 @@ func GetInitCgroupPath(subsystem string) (string, error) {
 }
 
 func getCgroupPathHelper(subsystem, cgroup string) (string, error) {
-	mnt, root, err := FindCgroupMountpointAndRoot(subsystem)
+	_, root, err := FindCgroupMountpointAndRoot(subsystem)
 	if err != nil {
 		return "", err
 	}
@@ -268,7 +268,7 @@ func getCgroupPathHelper(subsystem, cgroup string) (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(mnt, relCgroup), nil
+	return filepath.Join("/", relCgroup), nil
 }
 
 func readProcsFile(dir string) ([]int, error) {
