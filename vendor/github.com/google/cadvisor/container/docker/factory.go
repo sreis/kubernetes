@@ -122,7 +122,7 @@ func (self *dockerFactory) String() string {
 	return DockerNamespace
 }
 
-func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace, isRootCgroup bool) (handler container.ContainerHandler, err error) {
 	client, err := Client()
 	if err != nil {
 		return
