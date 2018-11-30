@@ -36,6 +36,7 @@ func (sp *summaryProviderImpl) GetSystemContainersStats(nodeConfig cm.NodeConfig
 		statsapi.SystemContainerPods:    {sp.provider.GetPodCgroupRoot(), updateStats},
 	}
 	for sys, cont := range systemContainers {
+		klog.Infof("systemContainers: sys=%+v cont={%+v}", sys, cont)
 		// skip if cgroup name is undefined (not all system containers are required)
 		if cont.name == "" {
 			continue
@@ -65,6 +66,7 @@ func (sp *summaryProviderImpl) GetSystemContainersCPUAndMemoryStats(nodeConfig c
 		statsapi.SystemContainerPods:    {sp.provider.GetPodCgroupRoot(), updateStats},
 	}
 	for sys, cont := range systemContainers {
+		klog.Infof("systemContainersCPUAndMemoryStats: sys=%+v cont={%+v}", sys, cont)
 		// skip if cgroup name is undefined (not all system containers are required)
 		if cont.name == "" {
 			continue
